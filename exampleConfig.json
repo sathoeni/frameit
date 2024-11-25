@@ -1,0 +1,176 @@
+{
+    "devices": {
+        "6.9": {
+            "horizontalPadding": 20,
+            "topScreenshotOffset": 147,
+            "fontSize": 78
+        },
+        "6.7": {
+            "horizontalPadding": 20,
+            "topScreenshotOffset": 147,
+            "fontSize": 78
+        },
+        "6.1": {
+            "horizontalPadding": 20,
+            "topScreenshotOffset": 147,
+            "fontSize": 72
+        },
+        "6.5": {
+            "horizontalPadding": 20,
+            "topScreenshotOffset": 147,
+            "fontSize": 78
+        },
+        "5.8": {
+            "horizontalPadding": 20,
+            "topScreenshotOffset": 147,
+            "fontSize": 72
+        },
+        "5.5": {
+            "horizontalPadding": 72,
+            "topScreenshotOffset": 390,
+            "fontSize": 78
+        },
+        "4.7": {
+            "horizontalPadding": 32,
+            "topScreenshotOffset": 266,
+            "fontSize": 48
+        },
+        "4.0": {
+            "horizontalPadding": 80,
+            "topScreenshotOffset": 140,
+            "fontSize": 40
+        },
+        "3.5": {
+            "horizontalPadding": 32,
+            "topScreenshotOffset": 177,
+            "fontSize": 30
+        },
+        "12.9": {
+            "horizontalPadding": 80,
+            "topScreenshotOffset": 180,
+            "fontSize": 78
+        },
+        "12.9_4th": {
+            "horizontalPadding": 54,
+            "topScreenshotOffset": 108,
+            "fontSize": 78
+        },
+        "11.0": {
+            "horizontalPadding": 54,
+            "topScreenshotOffset": 110,
+            "fontSize": 78
+        },
+        "10.5": {
+            "horizontalPadding": 100,
+            "topScreenshotOffset": 160,
+            "fontSize": 78
+        },
+        "9.7": {
+            "horizontalPadding": 140,
+            "topScreenshotOffset": 210,
+            "fontSize": 78
+        }
+    },
+    "texts": [
+        {
+            "localeCode": "de-DE",
+            "viewID": "home",
+            "title": "Der perfekte Begleiter für die ganze Familie."
+        },
+        {
+            "localeCode": "de-DE",
+            "viewID": "insurancecard",
+            "title": "Jederzeit direkter Zugriff auf Ihre Versichertenkarte."
+        },
+        {
+            "localeCode": "de-DE",
+            "viewID": "invoices",
+            "title": "Immer auf dem aktuellen Stand Ihrer offenen Rechnungen."
+        },
+        {
+            "localeCode": "de-DE",
+            "viewID": "policies",
+            "title": "Ihre Produkte stets im Überblick."
+        },
+        {
+            "localeCode": "de-DE",
+            "viewID": "scan",
+            "title": "Rechnungen scannen, senden und einsehen."
+        },
+        {
+            "localeCode": "it-IT",
+            "viewID": "home",
+            "title": "Il compagno perfetto per tutta la famiglia."
+        },
+        {
+            "localeCode": "it-IT",
+            "viewID": "insurancecard",
+            "title": "Accesso diretto alla vostra tessera d'assicurato in qualsiasi momento."
+        },
+        {
+            "localeCode": "it-IT",
+            "viewID": "invoices",
+            "title": "Panoramica sempre aggiornata delle vostre fatture in sospeso."
+        },
+        {
+            "localeCode": "it-IT",
+            "viewID": "policies",
+            "title": "I vostri prodotti sempre sotto controllo"
+        },
+        {
+            "localeCode": "it-IT",
+            "viewID": "scan",
+            "title": "Scansionare, inviare e visualizzare le fatture."
+        },
+        {
+            "localeCode": "fr-FR",
+            "viewID": "home",
+            "title": "Le compagnon idéal pour toute la famille."
+        },
+        {
+            "localeCode": "fr-FR",
+            "viewID": "insurancecard",
+            "title": "Accès direct à votre carte d'assuré à tout moment."
+        },
+        {
+            "localeCode": "fr-FR",
+            "viewID": "invoices",
+            "title": "Toujours au fait de la situation de vos factures en suspens."
+        },
+        {
+            "localeCode": "fr-FR",
+            "viewID": "policies",
+            "title": "Tous vos produits en un coup d'œil."
+        },
+        {
+            "localeCode": "fr-FR",
+            "viewID": "scan",
+            "title": "Envoyer et visionner les factures via l'app."
+        },
+        {
+            "localeCode": "en-US",
+            "viewID": "home",
+            "title": "The perfect companion for the whole family."
+        },
+        {
+            "localeCode": "en-US",
+            "viewID": "insurancecard",
+            "title": "Direct access to your insurance card at any time."
+        },
+        {
+            "localeCode": "en-US",
+            "viewID": "invoices",
+            "title": "Always keep track of your outstanding invoices."
+        },
+        {
+            "localeCode": "en-US",
+            "viewID": "policies",
+            "title": "Constant overview of your products."
+        },
+        {
+            "localeCode": "en-US",
+            "viewID": "scan",
+            "title": "Scan, send and view invoices."
+        }
+    ]
+}
