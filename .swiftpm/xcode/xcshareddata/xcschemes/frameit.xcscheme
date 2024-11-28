@@ -53,11 +53,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-i ~/Downloads/screenshots-source/ -o ~/Downloads/frameit/output"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i /Users/sathoeni/Downloads/screenshots-source/ -o /Users/sathoeni/Downloads/frameit/output -c /Users/sathoeni/Developer/Projects/frameit/exampleConfig.json"
-            isEnabled = "NO">
+            argument = "-i ~/Downloads/screenshots-source/ -o ~/Downloads/frameit/output -c ~/Developer/Projects/frameit/exampleConfig.json"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

@@ -1,73 +1,52 @@
 {
     "devices": {
-        "6.9": {
+        "iPhone 16 Pro Max": {
+            "width": 1320,
+            "height": 2868,
             "horizontalPadding": 20,
             "topScreenshotOffset": 147,
             "fontSize": 78
         },
-        "6.7": {
+        "iPhone 14 Pro Max": {
+            "width": 1290,
+            "height": 2796,
             "horizontalPadding": 20,
             "topScreenshotOffset": 147,
             "fontSize": 78
         },
-        "6.1": {
+        "iPhone 14 Pro": {
+            "width": 1179,
+            "height": 2556,
             "horizontalPadding": 20,
             "topScreenshotOffset": 147,
             "fontSize": 72
         },
-        "6.5": {
+        "iPhone 13 Pro Max": {
+            "width": 1284,
+            "height": 2778,
             "horizontalPadding": 20,
             "topScreenshotOffset": 147,
             "fontSize": 78
         },
-        "5.8": {
+        "iPhone 13/13 Pro": {
+            "width": 1170,
+            "height": 2532,
             "horizontalPadding": 20,
             "topScreenshotOffset": 147,
             "fontSize": 72
         },
-        "5.5": {
-            "horizontalPadding": 72,
-            "topScreenshotOffset": 390,
-            "fontSize": 78
-        },
-        "4.7": {
-            "horizontalPadding": 32,
-            "topScreenshotOffset": 266,
-            "fontSize": 48
-        },
-        "4.0": {
-            "horizontalPadding": 80,
-            "topScreenshotOffset": 140,
-            "fontSize": 40
-        },
-        "3.5": {
-            "horizontalPadding": 32,
-            "topScreenshotOffset": 177,
-            "fontSize": 30
-        },
-        "12.9": {
+        "iPad Pro 12.9": {
+            "width": 2048,
+            "height": 2732,
             "horizontalPadding": 80,
             "topScreenshotOffset": 180,
             "fontSize": 78
         },
-        "12.9_4th": {
-            "horizontalPadding": 54,
-            "topScreenshotOffset": 108,
-            "fontSize": 78
-        },
-        "11.0": {
+        "iPad Pro 11": {
+            "width": 1668,
+            "height": 2388,
             "horizontalPadding": 54,
             "topScreenshotOffset": 110,
-            "fontSize": 78
-        },
-        "10.5": {
-            "horizontalPadding": 100,
-            "topScreenshotOffset": 160,
-            "fontSize": 78
-        },
-        "9.7": {
-            "horizontalPadding": 140,
-            "topScreenshotOffset": 210,
             "fontSize": 78
         }
     },

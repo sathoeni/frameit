@@ -116,12 +116,16 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
         var renderableData: [(screenshot: RenderableScreenshotData, framedImage: NSImage)] = []
         
         for (image, url) in zip(images, urls) {
-            guard let deviceType = DeviceType.detect(from: image.size) else { continue }
-            
-            // Get configuration for the device
-            guard let deviceConfig = config.devices[deviceType.screenDiagonal] else {
-                throw FrameitError.missingDeviceConfiguration(deviceType.screenDiagonal)
+            // Find matching device configuration based on image size
+            guard let (deviceName, deviceConfig) = config.devices.first(where: { 
+                $0.value.size == image.size 
+            }) else {
+                print("Warning: No matching device configuration found for image size: \(image.size)")
+                continue
             }
+            
+            // Only trim transparent areas
+            let trimmedImage = trimTransparentAreas(image)
             
             let screenshotTextData = config.texts.map { text in
                 ScreenshotTextData(
@@ -140,19 +144,89 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 text: textData.title,
                 localeCode: textData.localeCode.rawValue,
                 url: url,
-                screenshotSize: deviceType.screenshotSize,
+                screenshotSize: image.size,
                 horizontalPadding: deviceConfig.horizontalPadding,
-                topImageOffset: deviceConfig.topScreenshotOffset,
+                topImageOffset: deviceConfig.topScreenshotOffset,  // Pass the offset to ScreenshotView
                 fontSize: CGFloat(deviceConfig.fontSize)
             )
             
-            renderableData.append((renderableScreenshot, image))
-            print("Prepared rendering data for device \(deviceType.id), language: \(textData.localeCode.rawValue)")
+            renderableData.append((renderableScreenshot, trimmedImage))
+            print("Prepared rendering data for device \(deviceName), language: \(textData.localeCode.rawValue)")
         }
         
         return renderableData
     }
     
+    private func trimTransparentAreas(_ image: NSImage) -> NSImage {
+        guard let cgImage = image.asCGImage() else { return image }
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        let bytesPerPixel = 4
+        let bytesPerRow = width * bytesPerPixel
+        
+        guard let context = CGContext(data: nil,
+                                    width: width,
+                                    height: height,
+                                    bitsPerComponent: 8,
+                                    bytesPerRow: bytesPerRow,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue),
+              let data = context.data else {
+            return image
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let pixelData = data.assumingMemoryBound(to: UInt8.self)
+        
+        var topY = 0
+        var bottomY = height - 1
+        
+        // Find first non-transparent row from top
+        outerTop: for y in 0..<height {
+            for x in 0..<width {
+                let offset = (y * bytesPerRow) + (x * bytesPerPixel) + 3 // +3 for alpha channel
+                if pixelData[offset] > 0 {
+                    topY = y
+                    break outerTop
+                }
+            }
+        }
+        
+        // Find first non-transparent row from bottom
+        outerBottom: for y in (0..<height).reversed() {
+            for x in 0..<width {
+                let offset = (y * bytesPerRow) + (x * bytesPerPixel) + 3
+                if pixelData[offset] > 0 {
+                    bottomY = y
+                    break outerBottom
+                }
+            }
+        }
+        
+        // Create new image with trimmed height
+        let trimmedHeight = bottomY - topY + 1
+        guard let trimmedContext = CGContext(data: nil,
+                                           width: width,
+                                           height: trimmedHeight,
+                                           bitsPerComponent: 8,
+                                           bytesPerRow: bytesPerRow,
+                                           space: CGColorSpaceCreateDeviceRGB(),
+                                           bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            return image
+        }
+        
+        trimmedContext.draw(cgImage, in: CGRect(x: 0, y: -CGFloat(topY), width: CGFloat(width), height: CGFloat(height)))
+        
+        guard let trimmedCGImage = trimmedContext.makeImage(),
+              let trimmedNSImage = trimmedCGImage.asNSImage() else {
+            return image
+        }
+        
+        return trimmedNSImage
+    }
+    
+    @MainActor
     private func generateFinalScreenshots(from framedScreenshots: [(screenshot: RenderableScreenshotData, framedImage: NSImage)]) async throws {
         for (screenshotData, framedImage) in framedScreenshots {
             // Save framed image temporarily
@@ -173,16 +247,32 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 topImageOffset: screenshotData.topImageOffset
             ) else { continue }
             
-            guard let bitmap = await screenshotView.bitmapImageRepForCachingDisplay(in: screenshotView.bounds) else { continue }
+            // Create bitmap with the exact size of the original screenshot
+            let bitmap = NSBitmapImageRep(
+                bitmapDataPlanes: nil,
+                pixelsWide: Int(screenshotData.screenshotSize.width),
+                pixelsHigh: Int(screenshotData.screenshotSize.height),
+                bitsPerSample: 8,
+                samplesPerPixel: 4,
+                hasAlpha: true,
+                isPlanar: false,
+                colorSpaceName: .deviceRGB,
+                bytesPerRow: 0,
+                bitsPerPixel: 0
+            )
             
-            await screenshotView.cacheDisplay(in: screenshotView.bounds, to: bitmap)
+            // Set the size of the view to match the bitmap size
+            screenshotView.frame = CGRect(origin: .zero, size: screenshotData.screenshotSize)
+            
+            // Render the view into the bitmap
+            await screenshotView.cacheDisplay(in: screenshotView.bounds, to: bitmap!)
             
             // Save the final screenshot
             let directoryURL = URL(fileURLWithPath: outputDirectory).appendingPathComponent(screenshotData.localeCode)
             try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil)
             
             let outputURL = directoryURL.appendingPathComponent(screenshotData.url.lastPathComponent)
-            if let pngData = bitmap.representation(using: .png, properties: [:]) {
+            if let pngData = bitmap?.representation(using: .png, properties: [:]) {
                 try pngData.write(to: outputURL)
                 print("Saved final screenshot: \(outputURL)")
             }

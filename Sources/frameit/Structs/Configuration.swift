@@ -9,12 +9,20 @@ import Foundation
 
 /// Configuration for a specific device screenshot
 struct DeviceConfiguration: Codable {
+    // The width of the device screenshot
+    let width: Double
+    // The height of the device screenshot
+    let height: Double
     // The horiztonal insets of the screenshot
     let horizontalPadding: Double
     // The top offset of the screenshot
     let topScreenshotOffset: Double
     // The font size of the text
-    let fontSize: Double
+    let fontSize: Int
+    
+    var size: CGSize {
+        CGSize(width: width, height: height)
+    }
 }
 
 /// Represents the configuration for a text

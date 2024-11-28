@@ -42,7 +42,6 @@ struct BezelFramer {
         compTool.noClip = noClip
         compTool.skipContentBox = skipContentBox
         
-        
         guard let screenshot = screenshotImage.asCGImage() else {
             throw BezelFramerError.failedToConvertImage
         }
@@ -51,10 +50,13 @@ struct BezelFramer {
             throw BezelFramerError.failedToAddBezelToScreenshot
         }
         
-        guard let cgImage = cgImage.asNSImage() else {
+        guard let nsImage = cgImage.asNSImage() else {
             throw BezelFramerError.failedToConvertImage
         }
         
-        return cgImage
+        // Ensure the output image has the same size as the input
+        nsImage.size = screenshotImage.size
+        
+        return nsImage
     }
 }
