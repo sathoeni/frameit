@@ -13,7 +13,7 @@ import AppKit
 
 struct BezelFramer {
     
-    static func addBezel(screenshotImage: NSImage, skipContentBox: Bool = false, noClip: Bool = false, frame: String? = nil) throws -> NSImage{
+    static func addBezel(screenshotImage: NSImage, skipContentBox: Bool = false, noClip: Bool = false, frame: String? = nil) throws -> NSImage {
         // Load the frame
         let bezelImage: CGImage
         
@@ -46,6 +46,7 @@ struct BezelFramer {
             throw BezelFramerError.failedToConvertImage
         }
         
+        // Create the bezeled image using the bezel dimensions
         guard let cgImage = compTool.create(bezel: bezelImage, screenshot: screenshot) else {
             throw BezelFramerError.failedToAddBezelToScreenshot
         }
@@ -53,9 +54,6 @@ struct BezelFramer {
         guard let nsImage = cgImage.asNSImage() else {
             throw BezelFramerError.failedToConvertImage
         }
-        
-        // Ensure the output image has the same size as the input
-        nsImage.size = screenshotImage.size
         
         return nsImage
     }

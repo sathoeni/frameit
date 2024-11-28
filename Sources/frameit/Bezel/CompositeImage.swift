@@ -25,25 +25,19 @@ class CompositeImage {
     ///   - screenshot: Screenshot
     /// - Returns: Composited Result
     func create(bezel: CGImage, screenshot: CGImage) -> CGImage? {
-        // First create the bezeled image as before
-        let bezeledImage = createBezeledImage(bezel: bezel, screenshot: screenshot)
-        
-        // Then scale and center it to match the original screenshot size
-        return scaleToScreenshotSize(bezeledImage: bezeledImage, targetSize: CGSize(width: screenshot.width, height: screenshot.height))
-    }
-    
-    private func createBezeledImage(bezel: CGImage, screenshot: CGImage) -> CGImage? {
-        // Start a context with bezel dimensions (as before)
+        // Start a context with bezel dimensions
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
-        let context = CGContext(data: nil, 
-                              width: bezel.width, 
-                              height: bezel.height, 
-                              bitsPerComponent: 8, 
-                              bytesPerRow: 0, 
-                              space: colorSpace, 
-                              bitmapInfo: bitmapInfo.rawValue)
-
+        let context = CGContext(
+            data: nil,
+            width: bezel.width,
+            height: bezel.height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo.rawValue
+        )
+        
         // Should we try and find the screenshot position data?
         let screenshotPosition = skipContentBox ? nil : bezel.findContentBox(ref: CGPoint(x: bezel.width / 2, y: bezel.height / 2))
 
@@ -52,7 +46,7 @@ class CompositeImage {
             // Don't use the clipping tool.
             context?.draw(screenshot, in: screenshotPosition ?? CGRect(
                 origin: CGPoint(x: ((bezel.width - screenshot.width) / 2), 
-                              y: ((bezel.height - screenshot.height) / 2)), 
+                                y: ((bezel.height - screenshot.height) / 2)), 
                 size: CGSize(width: screenshot.width, height: screenshot.height)
             ))
         } else {
@@ -73,53 +67,8 @@ class CompositeImage {
 
         return context?.makeImage()
     }
-    
-    private func scaleToScreenshotSize(bezeledImage: CGImage?, targetSize: CGSize) -> CGImage? {
-        guard let bezeledImage = bezeledImage else { return nil }
-        
-        // Create a new context with the target size
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
-        let context = CGContext(
-            data: nil,
-            width: Int(targetSize.width),
-            height: Int(targetSize.height),
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo.rawValue
-        )
-        
-        // Calculate scaling to fit bezeled image while maintaining aspect ratio
-        let scaleX = targetSize.width / CGFloat(bezeledImage.width)
-        let scaleY = targetSize.height / CGFloat(bezeledImage.height)
-        let scale = min(scaleX, scaleY)
-        
-        let scaledWidth = CGFloat(bezeledImage.width) * scale
-        let scaledHeight = CGFloat(bezeledImage.height) * scale
-        
-        // Center the scaled image
-        let x = (targetSize.width - scaledWidth) / 2
-        let y = (targetSize.height - scaledHeight) / 2
-        
-        // Draw the scaled bezeled image
-        context?.draw(bezeledImage, in: CGRect(
-            x: x,
-            y: y,
-            width: scaledWidth,
-            height: scaledHeight
-        ))
-        
-        return context?.makeImage()
-    }
 
-    /// Clip an image to a mask.
-    ///
-    /// - Parameters:
-    ///   - mask: The mask.
-    ///   - image: The image.
-    ///   - frame: The frame to use for the screenshot.
-    /// - Returns: Clipped image.
+    // Keep the clipImage function as is
     private func clipImage(mask: CGImage, image: CGImage, frame: CGRect? = nil) -> CGImage? {
         // Start a context
         let colorSpace = CGColorSpaceCreateDeviceRGB()

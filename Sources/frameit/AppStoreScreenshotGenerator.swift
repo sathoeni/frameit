@@ -77,153 +77,124 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
         
         // 3. If no config provided, just save the bezeled images
         guard let config = frameitConfig else {
-            try await saveFramedScreenshots(framedImages, urls: screenshotURLs, toDirectory: outputDirectory)
+            // Save the bezeled images, ensuring they match the original screenshot size
+            try await saveFramedScreenshots(framedImages, toDirectory: outputDirectory, originalURLs: screenshotURLs)
             return
         }
         
         // 4. Otherwise prepare rendering data and generate final screenshots with text
-        let renderableData = try prepareRenderingData(images: framedImages, urls: screenshotURLs, with: config)
+        let originalSizes = try loadScreenshots(fromDirectory: screenshotsDirectory).map { NSImage(contentsOf: $0)?.size ?? .zero }
+        let renderableData = try prepareRenderingData(images: framedImages.map { $0.framedImage }, originalSizes: originalSizes, urls: screenshotURLs, with: config)
         try await generateFinalScreenshots(from: renderableData)
     }
     
-    private func addBezelsToScreenshots(_ urls: [URL]) async throws -> [NSImage] {
-        var framedImages: [NSImage] = []
+    private func addBezelsToScreenshots(_ urls: [URL]) async throws -> [(originalSize: CGSize, framedImage: NSImage)] {
+        var framedImages: [(CGSize, NSImage)] = []
         
         for url in urls {
             guard let originalImage = NSImage(contentsOf: url) else { continue }
             let framedImage = try BezelFramer.addBezel(screenshotImage: originalImage)
-            framedImages.append(framedImage)
+            framedImages.append((originalImage.size, framedImage))
+            
+            // Clear the original image to free up memory
+            originalImage.removeRepresentation(originalImage.representations.first!)
         }
         
         return framedImages
     }
     
-    private func saveFramedScreenshots(_ images: [NSImage], urls: [URL], toDirectory directory: String) async throws {
-        for (image, url) in zip(images, urls) {
-            let outputURL = URL(fileURLWithPath: directory)
-                .appendingPathComponent(url.lastPathComponent)
+    private func saveFramedScreenshots(_ framedImages: [(originalSize: CGSize, framedImage: NSImage)], toDirectory directory: String, originalURLs: [URL]) async throws {
+        for (index, (originalSize, framedImage)) in framedImages.enumerated() {
+            // Create a new image context with the original dimensions
+            let outputURL = URL(fileURLWithPath: directory).appendingPathComponent("\(originalURLs[index].deletingPathExtension().lastPathComponent)_framed.png")
             
-            if let tiffData = image.tiffRepresentation,
-               let bitmap = NSBitmapImageRep(data: tiffData),
-               let pngData = bitmap.representation(using: .png, properties: [:]) {
-                try pngData.write(to: outputURL)
-                print("Saved framed screenshot: \(outputURL)")
-            }
-        }
-    }
-    
-    private func prepareRenderingData(images: [NSImage], urls: [URL], with config: FrameitConfiguration) throws -> [(screenshot: RenderableScreenshotData, framedImage: NSImage)] {
-        var renderableData: [(screenshot: RenderableScreenshotData, framedImage: NSImage)] = []
-        
-        for (image, url) in zip(images, urls) {
-            // Find matching device configuration based on image size
-            guard let (deviceName, deviceConfig) = config.devices.first(where: { 
-                $0.value.size == image.size 
-            }) else {
-                print("Warning: No matching device configuration found for image size: \(image.size)")
+            // Create a bitmap representation for PNG
+            let bitmapRep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(originalSize.width), pixelsHigh: Int(originalSize.height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
+            
+            // Create a CGContext from the bitmap representation
+            guard let context = CGContext(data: bitmapRep?.bitmapData,
+                                          width: Int(originalSize.width),
+                                          height: Int(originalSize.height),
+                                          bitsPerComponent: 8,
+                                          bytesPerRow: bitmapRep?.bytesPerRow ?? 0,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                print("Failed to create CGContext")
                 continue
             }
             
-            // Only trim transparent areas
-            let trimmedImage = trimTransparentAreas(image)
+            // Clear the context
+            context.clear(CGRect(x: 0, y: 0, width: originalSize.width, height: originalSize.height))
             
-            let screenshotTextData = config.texts.map { text in
-                ScreenshotTextData(
-                    localeCode: LocaleCode(rawValue: text.localeCode) ?? .en,
-                    viewID: ViewID(rawValue: text.viewID) ?? .home,
-                    title: text.title
-                )
+            // Draw the framed image in the center of the new image
+            let scaleFactor = min(originalSize.width / framedImage.size.width, originalSize.height / framedImage.size.height)
+            let scaledSize = NSSize(width: framedImage.size.width * scaleFactor, height: framedImage.size.height * scaleFactor)
+            let xOffset = (originalSize.width - scaledSize.width) / 2
+            let yOffset = (originalSize.height - scaledSize.height) / 2
+            
+            // Draw the framed image
+            context.draw(framedImage.asCGImage()!, in: CGRect(origin: CGPoint(x: xOffset, y: yOffset), size: scaledSize))
+            
+            // Save the resulting image
+            if let pngData = bitmapRep?.representation(using: .png, properties: [:]) {
+                try pngData.write(to: outputURL)
+                print("Saved framed screenshot: \(outputURL)")
+            } else {
+                print("Failed to create PNG data for \(outputURL)")
             }
             
-            guard let textData = screenshotTextData.first(where: {
-                url.path.lowercased().contains($0.viewID.rawValue.lowercased()) &&
-                url.path.contains($0.localeCode.rawValue)
-            }) else { continue }
+            // Clear the framed image to free up memory
+            framedImage.removeRepresentation(framedImage.representations.first!)
+        }
+    }
+    
+    private func prepareRenderingData(images: [NSImage], originalSizes: [CGSize], urls: [URL], with config: FrameitConfiguration) throws -> [(screenshot: RenderableScreenshotData, framedImage: NSImage)] {
+        var renderableData: [(screenshot: RenderableScreenshotData, framedImage: NSImage)] = []
+        
+        for index in 0..<images.count {
+            let image = images[index]
+            let originalSize = originalSizes[index]
+            let url = urls[index]
+            
+            // Find matching device configuration based on original image size
+            guard let (deviceName, deviceConfig) = config.devices.first(where: { 
+                $0.value.size == originalSize 
+            }) else {
+                print("Warning: No matching device configuration found for image size: \(originalSize)")
+                continue
+            }
+            
+            // Use the framed image directly
+            let trimmedImage = image // No need to trim if we are just using the framed image
+            
+            // Extract locale and view ID from the URL using the URL extension
+            let localeCode = url.localeCode
+            let viewID = url.viewID
+            
+            // Check if the extracted values are valid
+            guard let validLocaleCode = localeCode, let validViewID = viewID,
+                  let textData = config.texts.first(where: {
+                      $0.localeCode == validLocaleCode && $0.viewID == validViewID
+                  }) else { 
+                print("Warning: No valid text configuration found for URL: \(url)")
+                continue 
+            }
             
             let renderableScreenshot = RenderableScreenshotData(
                 text: textData.title,
-                localeCode: textData.localeCode.rawValue,
+                localeCode: textData.localeCode,
                 url: url,
-                screenshotSize: image.size,
+                screenshotSize: originalSize,  // Use original size for final output
                 horizontalPadding: deviceConfig.horizontalPadding,
-                topImageOffset: deviceConfig.topScreenshotOffset,  // Pass the offset to ScreenshotView
+                topImageOffset: deviceConfig.topScreenshotOffset,
                 fontSize: CGFloat(deviceConfig.fontSize)
             )
             
             renderableData.append((renderableScreenshot, trimmedImage))
-            print("Prepared rendering data for device \(deviceName), language: \(textData.localeCode.rawValue)")
+            print("Prepared rendering data for device \(deviceName), language: \(textData.localeCode)")
         }
         
         return renderableData
-    }
-    
-    private func trimTransparentAreas(_ image: NSImage) -> NSImage {
-        guard let cgImage = image.asCGImage() else { return image }
-        
-        let width = cgImage.width
-        let height = cgImage.height
-        let bytesPerPixel = 4
-        let bytesPerRow = width * bytesPerPixel
-        
-        guard let context = CGContext(data: nil,
-                                    width: width,
-                                    height: height,
-                                    bitsPerComponent: 8,
-                                    bytesPerRow: bytesPerRow,
-                                    space: CGColorSpaceCreateDeviceRGB(),
-                                    bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue),
-              let data = context.data else {
-            return image
-        }
-        
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        let pixelData = data.assumingMemoryBound(to: UInt8.self)
-        
-        var topY = 0
-        var bottomY = height - 1
-        
-        // Find first non-transparent row from top
-        outerTop: for y in 0..<height {
-            for x in 0..<width {
-                let offset = (y * bytesPerRow) + (x * bytesPerPixel) + 3 // +3 for alpha channel
-                if pixelData[offset] > 0 {
-                    topY = y
-                    break outerTop
-                }
-            }
-        }
-        
-        // Find first non-transparent row from bottom
-        outerBottom: for y in (0..<height).reversed() {
-            for x in 0..<width {
-                let offset = (y * bytesPerRow) + (x * bytesPerPixel) + 3
-                if pixelData[offset] > 0 {
-                    bottomY = y
-                    break outerBottom
-                }
-            }
-        }
-        
-        // Create new image with trimmed height
-        let trimmedHeight = bottomY - topY + 1
-        guard let trimmedContext = CGContext(data: nil,
-                                           width: width,
-                                           height: trimmedHeight,
-                                           bitsPerComponent: 8,
-                                           bytesPerRow: bytesPerRow,
-                                           space: CGColorSpaceCreateDeviceRGB(),
-                                           bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue) else {
-            return image
-        }
-        
-        trimmedContext.draw(cgImage, in: CGRect(x: 0, y: -CGFloat(topY), width: CGFloat(width), height: CGFloat(height)))
-        
-        guard let trimmedCGImage = trimmedContext.makeImage(),
-              let trimmedNSImage = trimmedCGImage.asNSImage() else {
-            return image
-        }
-        
-        return trimmedNSImage
     }
     
     @MainActor
