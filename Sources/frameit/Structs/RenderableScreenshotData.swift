@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Contains all information to label a screenshots
 struct RenderableScreenshotData {
     var text: String
     var localeCode: String

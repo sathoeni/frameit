@@ -10,6 +10,10 @@ import AppKit
 
 // MARK: - ScreenshotView
 
+
+/// A helper view to draw an image and a text into a single view
+/// The position and insets of the image and could be customized.
+/// The label will be placed centered between the top of the image and the top of the view
 final class ScreenshotView: NSView {
 
     private var imageURL: URL

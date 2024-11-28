@@ -52,8 +52,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i /Users/sathoeni/Downloads/screenshots-source/ -o /Users/sathoeni/Downloads/frameit/output -c /Users/sathoeni/Developer/Projects/frameit/exampleConfig.json"
+            argument = "-i ~/Downloads/screenshots-source/ -o ~/Downloads/frameit/output"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i /Users/sathoeni/Downloads/screenshots-source/ -o /Users/sathoeni/Downloads/frameit/output -c /Users/sathoeni/Developer/Projects/frameit/exampleConfig.json"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
