@@ -4,8 +4,7 @@
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      buildArchitectures = "Automatic">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -53,11 +52,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-i ~/Downloads/screenshots-source/ -o ~/Downloads/frameit/output"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i ~/Downloads/screenshots-source/ -o ~/Downloads/frameit/output -c ~/Developer/Projects/frameit/exampleConfig.json"
-            isEnabled = "NO">
+            argument = "-i ~/Downloads/screenshots-source/ -o ~/Downloads/frameit/output -c ~/Downloads/screenshots-source/config.json"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

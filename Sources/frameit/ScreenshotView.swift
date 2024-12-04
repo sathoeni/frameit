@@ -12,11 +12,11 @@ import AppKit
 
 
 /// A helper view to draw an image and a text into a single view
-/// The position and insets of the image and could be customized.
-/// The label will be placed centered between the top of the image and the top of the view
+/// The position and insets of the image and text can be customized.
+/// The label will be placed centered between the top of the image and the top of the view.
 final class ScreenshotView: NSView {
 
-    private var imageURL: URL
+    private var image: NSImage
     private var title: String
     private var horizontalPadding: CGFloat
     private var topImageOffset: CGFloat
@@ -27,21 +27,19 @@ final class ScreenshotView: NSView {
 
     // MARK: Lifecycle
 
-    init?(imageURL: URL, title: String, fontSize: CGFloat, size: CGSize, horizontalImagePadding: Double, topImageOffset: Double) {
-        self.imageURL = imageURL
+    init?(image: NSImage, title: String, fontSize: CGFloat, size: CGSize, horizontalImagePadding: Double, topImageOffset: Double) {
+        self.image = image
         self.title = title
         self.topImageOffset = CGFloat(topImageOffset)
-        horizontalPadding = CGFloat(horizontalImagePadding)
+        self.horizontalPadding = CGFloat(horizontalImagePadding)
 
         guard let customFont = NSFont(name: fontName, size: fontSize) else {
-            print("*** ERROR: Font \"\(fontName)\" not found. Check if font is installed with the font book app. You can find the app in the resource folder. Install it by double click")
+            print("*** ERROR: Font \"\(fontName)\" not found. Check if the font is installed with the Font Book app. You can find the font in the resource folder and install it by double-clicking.")
             return nil
         }
-        font = customFont
+        self.font = customFont
 
         super.init(frame: CGRect(x: 0, y: 0, width: size.width, height: size.height))
-
-        // frame = convertFromBacking(frame)
     }
 
     required init?(coder _: NSCoder) {
@@ -55,32 +53,34 @@ final class ScreenshotView: NSView {
         NSBezierPath.fill(dirtyRect)
 
         // Draw Image
-        guard let image = NSImage(contentsOfFile: imageURL.path) else { return }
-
-        let imagePreferredWidth = frame.width - CGFloat(horizontalPadding * 2)
+        let imagePreferredWidth = frame.width - horizontalPadding * 2
         let imageScaleFactor = imagePreferredWidth / image.size.width
-        image.size = CGSize(width: image.size.width * imageScaleFactor, height: image.size.height * imageScaleFactor)
+        let scaledImageSize = CGSize(width: image.size.width * imageScaleFactor, height: image.size.height * imageScaleFactor)
 
-        // Calculate position of topLeft edge
-        let xImagePosition = (frame.width - image.size.width) / 2
+        // Calculate position of the image
+        let xImagePosition = (frame.width - scaledImageSize.width) / 2
         let yImagePosition = -topImageOffset
 
-        let imagePosition = CGPoint(x: xImagePosition, y: yImagePosition)
-        image.draw(at: imagePosition, from: CGRect.zero, operation: NSCompositingOperation.sourceOver, fraction: 1)
+        let imageRect = CGRect(origin: CGPoint(x: xImagePosition, y: yImagePosition), size: scaledImageSize)
+        image.draw(in: imageRect, from: CGRect.zero, operation: .sourceOver, fraction: 1)
 
         // Draw Text
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
 
-        let textAttributes = [NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: textColor, NSAttributedString.Key.paragraphStyle: paragraphStyle]
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle
+        ]
 
         let attributedString = NSAttributedString(string: title, attributes: textAttributes)
         let maxTextWidth = frame.width - 2 * horizontalPadding
-        var textRect = attributedString.boundingRect(with: CGSize(width: maxTextWidth, height: 0.0), options: .usesLineFragmentOrigin)
+        var textRect = attributedString.boundingRect(with: CGSize(width: maxTextWidth, height: CGFloat.greatestFiniteMagnitude), options: .usesLineFragmentOrigin)
 
-        // Position the Text centered between top edge and screenshots top edge
+        // Position the text centered between the top edge and the image's top edge
         let xTextPosition = (frame.width - textRect.width) / 2
-        let imageTopPosition = imagePosition.y + image.size.height
+        let imageTopPosition = yImagePosition + scaledImageSize.height
         let yTextPosition = imageTopPosition + (frame.height - imageTopPosition - textRect.height) / 2
 
         textRect.origin = CGPoint(x: xTextPosition, y: yTextPosition)
@@ -88,3 +88,4 @@ final class ScreenshotView: NSView {
         attributedString.draw(with: textRect, options: .usesLineFragmentOrigin)
     }
 }
+

@@ -8,29 +8,32 @@
 import Foundation
 
 extension URL {
-    /// A computed property to extract the locale code from the URL's last path component.
-    /// Returns a locale code in the format "xx-XX", or `nil` if not found.
+    /// Extracts the locale code from the URL's path components.
+    /// Assumes the locale code is the last directory name before the filename.
     var localeCode: String? {
-        let filename = self.lastPathComponent
-        print("Extracting locale code from filename: \(filename)")
-        if let match = filename.range(of: "([a-z]{2}-[A-Z]{2})", options: .regularExpression) {
-            let localeCode = String(filename[match])
-            print("Extracted locale code: \(localeCode)")
-            return localeCode
-        }
-        return nil // Return nil if not found
+        // Get the parent directory name (which should be the locale code)
+        let localeCode = self.deletingLastPathComponent().lastPathComponent
+        print("Extracted locale code: \(localeCode)")
+        return localeCode
     }
     
-    /// A computed property to extract the view ID from the URL's last path component.
-    /// Returns a view ID matching the pattern "_[a-z]+", or `nil` if not found.
+    /// Extracts the view ID from the URL's filename.
+    /// Assumes the view ID is the last component 
     var viewID: String? {
-        let filename = self.lastPathComponent
-        print("Extracting view ID from filename: \(filename)")
-        if let match = filename.range(of: "_([a-z]+)", options: .regularExpression) {
-            let viewID = String(filename[match]).replacingOccurrences(of: "_", with: "")
+        // Remove the file extension from the filename
+        let filenameWithoutExtension = self.deletingPathExtension().lastPathComponent
+        print("Filename without extension: \(filenameWithoutExtension)")
+        
+        // Split the filename by dots
+        let components = filenameWithoutExtension.components(separatedBy: ".")
+        
+        // Assume the view ID is the last component after the last dot
+        if let viewID = components.last, components.count > 1 {
             print("Extracted view ID: \(viewID)")
             return viewID
+        } else {
+            print("View ID not found in filename.")
+            return nil
         }
-        return nil // Return nil if not found
     }
 }

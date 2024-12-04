@@ -14,6 +14,16 @@ import Foundation
 import AppKit
 import ArgumentParser
 
+struct FramingData {
+    var originalPixelSize: CGSize // Original size in pixels
+    var framedPath: String?
+}
+
+struct RenderableScreenshot {
+    let data: RenderableScreenshotData
+    let framedImagePath: String
+}
+
 @main
 struct AppStoreScreenshotGenerator: AsyncParsableCommand {
 
@@ -41,7 +51,7 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
         // EXPAND "~" to home path
         outputDirectory = NSString(string: outputDirectory).expandingTildeInPath
 
-        // Try to create output directory (if missing)
+        // Create output directory (if necessary)
         if !FileManager.default.fileExists(atPath: outputDirectory) {
             try FileManager.default.createDirectory(
                 atPath: outputDirectory,
@@ -72,152 +82,241 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
         // 1. Load all screenshots
         let screenshotURLs = try loadScreenshots(fromDirectory: screenshotsDirectory)
         
-        // 2. Add bezels
-        let framedImages = try await addBezelsToScreenshots(screenshotURLs)
+        let framedScreenshotsDir = outputDirectory.appending("/framed")
         
-        // 3. If no config provided, just save the bezeled images
+        // 2. Add bezels
+        let framingDataList = try await addBezelsToScreenshots(inputDirectory: screenshotsDirectory, framedScreenshotsDir: framedScreenshotsDir, urls: screenshotURLs, keepOriginalSize: frameitConfig == nil)
+        
+        
         guard let config = frameitConfig else {
-            // Save the bezeled images, ensuring they match the original screenshot size
-            try await saveFramedScreenshots(framedImages, toDirectory: outputDirectory, originalURLs: screenshotURLs)
+            print("No configuration file provided. Labeling the screenshot will be skipped")
             return
         }
         
-        // 4. Otherwise prepare rendering data and generate final screenshots with text
-        let originalSizes = try loadScreenshots(fromDirectory: screenshotsDirectory).map { NSImage(contentsOf: $0)?.size ?? .zero }
-        let renderableData = try prepareRenderingData(images: framedImages.map { $0.framedImage }, originalSizes: originalSizes, urls: screenshotURLs, with: config)
-        try await generateFinalScreenshots(from: renderableData)
+        // 3. Otherwise prepare rendering data and generate final screenshots with text
+        let renderableDataList = try prepareRenderingData(framingDataList: framingDataList, with: config)
+
+        try await generateFinalScreenshots(from: renderableDataList)
     }
-    
-    private func addBezelsToScreenshots(_ urls: [URL]) async throws -> [(originalSize: CGSize, framedImage: NSImage)] {
-        var framedImages: [(CGSize, NSImage)] = []
-        
+
+    private func addBezelsToScreenshots(
+        inputDirectory: String,
+        framedScreenshotsDir: String,
+        urls: [URL],
+        keepOriginalSize: Bool = false
+    ) async throws -> [FramingData] {
+        let fileManager = FileManager.default
+        var framingDataList: [FramingData] = []
+
         for url in urls {
-            guard let originalImage = NSImage(contentsOf: url) else { continue }
-            let framedImage = try BezelFramer.addBezel(screenshotImage: originalImage)
-            framedImages.append((originalImage.size, framedImage))
             
-            // Clear the original image to free up memory
-            originalImage.removeRepresentation(originalImage.representations.first!)
+                guard let originalImage = NSImage(contentsOf: url),
+                      let originalBitmapRep = originalImage.representations.first as? NSBitmapImageRep else {
+                    continue
+                }
+                
+            autoreleasepool {
+
+                originalImage.cacheMode = .never
+
+                
+                // Get original pixel dimensions
+                let originalPixelSize = CGSize(width: originalBitmapRep.pixelsWide, height: originalBitmapRep.pixelsHigh)
+                
+                // Add bezel to the original image
+                do {
+                    var framedImage = try BezelFramer.addBezel(screenshotImage: originalImage)
+                    
+                    // Resize the framed image if keepOriginalSize is true
+                    if keepOriginalSize, let resizedImage = resizeImageToOriginalPixelSize(framedImage, originalPixelSize: originalPixelSize) {
+                        framedImage = resizedImage
+                    }
+                    
+                    // Calculate the relative path of the file from the input directory
+                    let relativePath = url.deletingLastPathComponent().path.replacingOccurrences(of: inputDirectory, with: "")
+                    
+                    // Create the corresponding subdirectory in the output directory
+                    let targetDirectory = URL(fileURLWithPath: framedScreenshotsDir).appendingPathComponent(relativePath).path
+                    try fileManager.createDirectory(atPath: targetDirectory, withIntermediateDirectories: true)
+                    
+                    // Save the framed image
+                    let filename = url.lastPathComponent
+                    let framedImageURL = URL(fileURLWithPath: targetDirectory).appendingPathComponent(filename)
+                    
+                    if let tiffData = framedImage.tiffRepresentation,
+                       let bitmapImageRep = NSBitmapImageRep(data: tiffData),
+                       let pngData = bitmapImageRep.representation(using: .png, properties: [:]) {
+                        try pngData.write(to: framedImageURL)
+                    } else {
+                        throw NSError(domain: "ImageProcessingError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to save framed image to disk."])
+                    }
+                    
+                    // Append the framing data
+                    let framingData = FramingData(
+                        originalPixelSize: originalPixelSize,
+                        framedPath: framedImageURL.path
+                    )
+                    framingDataList.append(framingData)
+                    
+                    // Clear images to free up memory
+                    originalImage.removeRepresentation(originalImage.representations.first!)
+                    framedImage.removeRepresentation(framedImage.representations.first!)
+                    
+                    
+                    
+                } catch {
+                    print(error)
+                }
+            }
         }
+        return framingDataList
+    }
+
+
+    private func resizeImageToOriginalPixelSize(_ image: NSImage, originalPixelSize: CGSize) -> NSImage? {
+        let pixelsWide = Int(originalPixelSize.width)
+        let pixelsHigh = Int(originalPixelSize.height)
+
+        // Create a bitmap representation with the original pixel dimensions
+        let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: pixelsWide,
+            pixelsHigh: pixelsHigh,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        )
+
+        // Create a CGContext from the bitmap representation
+        guard let context = CGContext(
+            data: bitmapRep?.bitmapData,
+            width: pixelsWide,
+            height: pixelsHigh,
+            bitsPerComponent: 8,
+            bytesPerRow: bitmapRep?.bytesPerRow ?? 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            print("Failed to create CGContext")
+            return nil
+        }
+
+        // Clear the context
+        context.clear(CGRect(x: 0, y: 0, width: pixelsWide, height: pixelsHigh))
+
+        // Calculate the scaling and offsets to center the image
+        let scaleFactor = min(CGFloat(pixelsWide) / image.size.width, CGFloat(pixelsHigh) / image.size.height)
+        let scaledSize = NSSize(width: image.size.width * scaleFactor, height: image.size.height * scaleFactor)
+        let xOffset = (CGFloat(pixelsWide) - scaledSize.width) / 2
+        let yOffset = (CGFloat(pixelsHigh) - scaledSize.height) / 2
+
+        // Draw the input image in the resized context
+        context.draw(image.asCGImage()!, in: CGRect(origin: CGPoint(x: xOffset, y: yOffset), size: scaledSize))
+
+        // Create a new NSImage from the bitmap representation
+        let resizedImage = NSImage(size: originalPixelSize)
+        resizedImage.addRepresentation(bitmapRep!)
+    
         
-        return framedImages
+        return resizedImage
     }
     
-    private func saveFramedScreenshots(_ framedImages: [(originalSize: CGSize, framedImage: NSImage)], toDirectory directory: String, originalURLs: [URL]) async throws {
-        for (index, (originalSize, framedImage)) in framedImages.enumerated() {
-            // Create a new image context with the original dimensions
-            let outputURL = URL(fileURLWithPath: directory).appendingPathComponent("\(originalURLs[index].deletingPathExtension().lastPathComponent)_framed.png")
-            
-            // Create a bitmap representation for PNG
-            let bitmapRep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(originalSize.width), pixelsHigh: Int(originalSize.height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
-            
-            // Create a CGContext from the bitmap representation
-            guard let context = CGContext(data: bitmapRep?.bitmapData,
-                                          width: Int(originalSize.width),
-                                          height: Int(originalSize.height),
-                                          bitsPerComponent: 8,
-                                          bytesPerRow: bitmapRep?.bytesPerRow ?? 0,
-                                          space: CGColorSpaceCreateDeviceRGB(),
-                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-                print("Failed to create CGContext")
+    private func prepareRenderingData(
+        framingDataList: [FramingData],
+        with config: FrameitConfiguration
+    ) throws -> [RenderableScreenshot] {
+        var renderableDataList: [RenderableScreenshot] = []
+        
+        for framingData in framingDataList {
+            // Ensure we have a valid framed image path
+            guard let framedPath = framingData.framedPath else {
+                print("Warning: Framed path is nil in framingData")
                 continue
             }
             
-            // Clear the context
-            context.clear(CGRect(x: 0, y: 0, width: originalSize.width, height: originalSize.height))
+            // Convert framedPath to URL
+            let framedURL = URL(fileURLWithPath: framedPath)
             
-            // Draw the framed image in the center of the new image
-            let scaleFactor = min(originalSize.width / framedImage.size.width, originalSize.height / framedImage.size.height)
-            let scaledSize = NSSize(width: framedImage.size.width * scaleFactor, height: framedImage.size.height * scaleFactor)
-            let xOffset = (originalSize.width - scaledSize.width) / 2
-            let yOffset = (originalSize.height - scaledSize.height) / 2
-            
-            // Draw the framed image
-            context.draw(framedImage.asCGImage()!, in: CGRect(origin: CGPoint(x: xOffset, y: yOffset), size: scaledSize))
-            
-            // Save the resulting image
-            if let pngData = bitmapRep?.representation(using: .png, properties: [:]) {
-                try pngData.write(to: outputURL)
-                print("Saved framed screenshot: \(outputURL)")
-            } else {
-                print("Failed to create PNG data for \(outputURL)")
+            // Extract localeCode and viewID from the framed image URL
+            guard let localeCode = framedURL.localeCode,
+                  let viewID = framedURL.viewID else {
+                print("Warning: Unable to extract localeCode or viewID from framed image path: \(framedPath)")
+                continue
             }
             
-            // Clear the framed image to free up memory
-            framedImage.removeRepresentation(framedImage.representations.first!)
-        }
-    }
-    
-    private func prepareRenderingData(images: [NSImage], originalSizes: [CGSize], urls: [URL], with config: FrameitConfiguration) throws -> [(screenshot: RenderableScreenshotData, framedImage: NSImage)] {
-        var renderableData: [(screenshot: RenderableScreenshotData, framedImage: NSImage)] = []
-        
-        for index in 0..<images.count {
-            let image = images[index]
-            let originalSize = originalSizes[index]
-            let url = urls[index]
+            // Get the original pixel size
+            let originalSize = framingData.originalPixelSize
             
             // Find matching device configuration based on original image size
-            guard let (deviceName, deviceConfig) = config.devices.first(where: { 
-                $0.value.size == originalSize 
+            guard let (deviceName, deviceConfig) = config.devices.first(where: {
+                $0.value.size == originalSize
             }) else {
                 print("Warning: No matching device configuration found for image size: \(originalSize)")
                 continue
             }
             
-            // Use the framed image directly
-            let trimmedImage = image // No need to trim if we are just using the framed image
-            
-            // Extract locale and view ID from the URL using the URL extension
-            let localeCode = url.localeCode
-            let viewID = url.viewID
-            
-            // Check if the extracted values are valid
-            guard let validLocaleCode = localeCode, let validViewID = viewID,
-                  let textData = config.texts.first(where: {
-                      $0.localeCode == validLocaleCode && $0.viewID == validViewID
-                  }) else { 
-                print("Warning: No valid text configuration found for URL: \(url)")
-                continue 
+            // Find the corresponding text data
+            guard let textData = config.texts.first(where: {
+                $0.localeCode.lowercased() == localeCode.lowercased() && $0.viewID.lowercased() == viewID.lowercased()
+            }) else {
+                print("Warning: No valid text configuration found for locale: \(localeCode), viewID: \(viewID)")
+                continue
             }
             
-            let renderableScreenshot = RenderableScreenshotData(
+            // Create the renderable screenshot data
+            let renderableScreenshotData = RenderableScreenshotData(
                 text: textData.title,
                 localeCode: textData.localeCode,
-                url: url,
-                screenshotSize: originalSize,  // Use original size for final output
+                url: framedURL,
+                screenshotSize: originalSize,  // Use original pixel size
                 horizontalPadding: deviceConfig.horizontalPadding,
                 topImageOffset: deviceConfig.topScreenshotOffset,
                 fontSize: CGFloat(deviceConfig.fontSize)
             )
             
-            renderableData.append((renderableScreenshot, trimmedImage))
+            // Create the RenderableScreenshot instance
+            let renderableScreenshot = RenderableScreenshot(
+                data: renderableScreenshotData,
+                framedImagePath: framedPath
+            )
+            
+            // Append to the renderable data array
+            renderableDataList.append(renderableScreenshot)
             print("Prepared rendering data for device \(deviceName), language: \(textData.localeCode)")
         }
         
-        return renderableData
+        return renderableDataList
     }
     
     @MainActor
-    private func generateFinalScreenshots(from framedScreenshots: [(screenshot: RenderableScreenshotData, framedImage: NSImage)]) async throws {
-        for (screenshotData, framedImage) in framedScreenshots {
-            // Save framed image temporarily
-            let temporaryURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".png")
-            if let tiffData = framedImage.tiffRepresentation,
-               let bitmap = NSBitmapImageRep(data: tiffData),
-               let pngData = bitmap.representation(using: .png, properties: [:]) {
-                try? pngData.write(to: temporaryURL)
+    private func generateFinalScreenshots(from renderableScreenshots: [RenderableScreenshot]) async throws {
+        for renderableScreenshot in renderableScreenshots {
+            let screenshotData = renderableScreenshot.data
+            let framedImagePath = renderableScreenshot.framedImagePath
+
+            // Load the framed image from disk
+            guard let framedImage = NSImage(contentsOfFile: framedImagePath) else {
+                print("Warning: Could not load framed image from path: \(framedImagePath)")
+                continue
             }
-            
+
             // Create and render the final screenshot with text
-            guard let screenshotView = await ScreenshotView(
-                imageURL: temporaryURL,
+            guard let screenshotView = ScreenshotView(
+                image: framedImage,
                 title: screenshotData.text,
                 fontSize: screenshotData.fontSize,
                 size: screenshotData.screenshotSize,
                 horizontalImagePadding: screenshotData.horizontalPadding,
                 topImageOffset: screenshotData.topImageOffset
-            ) else { continue }
-            
+            ) else {
+                print("Warning: Failed to create ScreenshotView for image at path: \(framedImagePath)")
+                continue
+            }
+
             // Create bitmap with the exact size of the original screenshot
             let bitmap = NSBitmapImageRep(
                 bitmapDataPlanes: nil,
@@ -231,31 +330,36 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 bytesPerRow: 0,
                 bitsPerPixel: 0
             )
-            
+
             // Set the size of the view to match the bitmap size
             screenshotView.frame = CGRect(origin: .zero, size: screenshotData.screenshotSize)
-            
+
             // Render the view into the bitmap
-            await screenshotView.cacheDisplay(in: screenshotView.bounds, to: bitmap!)
-            
+            guard let bitmapRep = bitmap else {
+                print("Warning: Failed to create bitmap representation for screenshot")
+                continue
+            }
+
+            let graphicsContext = NSGraphicsContext(bitmapImageRep: bitmapRep)
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = graphicsContext
+
+            screenshotView.displayIgnoringOpacity(screenshotView.bounds, in: graphicsContext!)
+
+            NSGraphicsContext.restoreGraphicsState()
+
             // Save the final screenshot
-            let directoryURL = URL(fileURLWithPath: outputDirectory).appendingPathComponent(screenshotData.localeCode)
+            let directoryURL = URL(fileURLWithPath: outputDirectory).appendingPathComponent("labeled").appendingPathComponent(screenshotData.localeCode)
             try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil)
-            
+
             let outputURL = directoryURL.appendingPathComponent(screenshotData.url.lastPathComponent)
-            if let pngData = bitmap?.representation(using: .png, properties: [:]) {
+            if let pngData = bitmapRep.representation(using: .png, properties: [:]) {
                 try pngData.write(to: outputURL)
                 print("Saved final screenshot: \(outputURL)")
+            } else {
+                print("Warning: Failed to create PNG data for final screenshot at path: \(outputURL)")
             }
-            
-            // Clean up temporary file
-            try? FileManager.default.removeItem(at: temporaryURL)
         }
-    }
-    
-    // Move extensions inside the struct
-    private struct Extensions {
-
     }
     
     // Move error types inside the struct
