@@ -87,7 +87,6 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
         // 2. Add bezels
         let framingDataList = try await addBezelsToScreenshots(inputDirectory: screenshotsDirectory, framedScreenshotsDir: framedScreenshotsDir, urls: screenshotURLs, keepOriginalSize: frameitConfig == nil)
         
-        
         guard let config = frameitConfig else {
             print("No configuration file provided. Labeling the screenshot will be skipped")
             return
@@ -107,18 +106,20 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
     ) async throws -> [FramingData] {
         let fileManager = FileManager.default
         var framingDataList: [FramingData] = []
-
+        
         for url in urls {
             
-                guard let originalImage = NSImage(contentsOf: url),
-                      let originalBitmapRep = originalImage.representations.first as? NSBitmapImageRep else {
-                    continue
-                }
-                
+            print("Processing: \(url.lastPathComponent)")
+            
+            guard let originalImage = NSImage(contentsOf: url),
+                  let originalBitmapRep = originalImage.representations.first as? NSBitmapImageRep else {
+                continue
+            }
+            
             autoreleasepool {
-
+                
                 originalImage.cacheMode = .never
-
+                
                 
                 // Get original pixel dimensions
                 let originalPixelSize = CGSize(width: originalBitmapRep.pixelsWide, height: originalBitmapRep.pixelsHigh)

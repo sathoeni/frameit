@@ -6,169 +6,141 @@
 
 import Foundation
 import CoreImage
+import CoreGraphics
 
 extension CGImage {
-
+    
     /// Find a content box from a reference point.
     ///
     /// - Parameter ref: Reference Point
     /// - Returns: CGRect of the position of the content box.
     public func findContentBox(ref: CGPoint) -> CGRect? {
-        if let cfData = dataProvider?.data, let pointer = CFDataGetBytePtr(cfData) {
-            // Find the preliminary points
-            let prelim = XYPosHolder(
-                minY: self.findYEdge(pointer: pointer, x: Int(ref.x), startingY: Int(ref.y), negative: true),
-                maxY: self.findYEdge(pointer: pointer, x: Int(ref.x), startingY: Int(ref.y), negative: false),
-                minX: self.findXEdge(pointer: pointer, y: Int(ref.y), startingX: Int(ref.x), negative: true),
-                maxX: self.findXEdge(pointer: pointer, y: Int(ref.y), startingX: Int(ref.x), negative: false)
-            )
-
-            // Check for a nil.
-            if prelim.minX == nil || prelim.maxX == nil || prelim.minY == nil || prelim.maxY == nil {
-                return nil
-            }
-
-            // Holder for final values.
-            var finalPos = XYPosHolder(minY: prelim.minY, maxY: prelim.maxY, minX: prelim.minX, maxX: prelim.maxX)
-
-            // Find the Min/Max Y by searching the X Axis.
-            for x in prelim.minX!..<prelim.maxX! {
-                // Check each direction
-                guard let yMin = self.findYEdge(pointer: pointer, x: x, startingY: Int(ref.y), negative: true) else {
-                    continue
-                }
-                guard let yMax = self.findYEdge(pointer: pointer, x: x, startingY: Int(ref.y), negative: false) else {
-                    continue
-                }
-
-                // Update?
-                if yMin < finalPos.minY! {
-                    // New "north"
-                    finalPos.minY = yMin
-                }
-
-                // Update?
-                if yMax > finalPos.maxY! {
-                    // New "south"
-                    finalPos.maxY = yMax
-                }
-            }
-
-            // Find the Min/Max X by searching the Y Axis.
-            for y in prelim.minY!..<prelim.maxY! {
-                // Check each direction
-                guard let xMin = self.findXEdge(pointer: pointer, y: y, startingX: Int(ref.x), negative: true) else {
-                    continue
-                }
-                guard let xMax = self.findXEdge(pointer: pointer, y: y, startingX: Int(ref.x), negative: false) else {
-                    continue
-                }
-
-                // Update?
-                if xMin < finalPos.minX! {
-                    // New "west"
-                    finalPos.minX = xMin
-                }
-
-                // Update?
-                if xMax > finalPos.maxX! {
-                    // New "east"
-                    finalPos.maxX = xMax
-                }
-            }
-
-            // Create the output CGRect
-            let x = finalPos.minX!
-
-            // Negative one as the size is zero based.
-            let boxWidth = finalPos.maxX! - finalPos.minX! - 1
-            let boxHeight = finalPos.maxY! - finalPos.minY! - 1
-
-            // Flip the Y axis to compensate for macOS being LLO
-            let y = height - (finalPos.minY! + boxHeight)
-
-            return CGRect(x: x, y: y, width: boxWidth, height: boxHeight)
+        guard let dataProvider = self.dataProvider,
+              let cfData = dataProvider.data,
+              let pointer = CFDataGetBytePtr(cfData) else {
+            return nil
         }
-
-        return nil
+        
+        let bytesPerRow = self.bytesPerRow
+        
+        let width = self.width
+        let height = self.height
+        
+        // Helper to calculate pixel index
+        func pixelAddress(x: Int, y: Int) -> Int {
+            return y * bytesPerRow + x * 4 // Assuming RGBA
+        }
+        
+        // Find preliminary edges
+        guard let prelimMinY = findYEdge(pointer: pointer, x: Int(ref.x), startingY: Int(ref.y), negative: true, width: width, bytesPerRow: bytesPerRow),
+              let prelimMaxY = findYEdge(pointer: pointer, x: Int(ref.x), startingY: Int(ref.y), negative: false, width: width, bytesPerRow: bytesPerRow),
+              let prelimMinX = findXEdge(pointer: pointer, y: Int(ref.y), startingX: Int(ref.x), negative: true, width: width, bytesPerRow: bytesPerRow),
+              let prelimMaxX = findXEdge(pointer: pointer, y: Int(ref.y), startingX: Int(ref.x), negative: false, width: width, bytesPerRow: bytesPerRow) else {
+            return nil
+        }
+        
+        var finalMinY = prelimMinY
+        var finalMaxY = prelimMaxY
+        var finalMinX = prelimMinX
+        var finalMaxX = prelimMaxX
+        
+        // Refine Y boundaries by iterating over X
+        for x in finalMinX..<finalMaxX {
+            if let yMin = findYEdge(pointer: pointer, x: x, startingY: Int(ref.y), negative: true, width: width, bytesPerRow: bytesPerRow),
+               yMin < finalMinY {
+                finalMinY = yMin
+            }
+            if let yMax = findYEdge(pointer: pointer, x: x, startingY: Int(ref.y), negative: false, width: width, bytesPerRow: bytesPerRow),
+               yMax > finalMaxY {
+                finalMaxY = yMax
+            }
+        }
+        
+        // Refine X boundaries by iterating over Y
+        for y in finalMinY..<finalMaxY {
+            if let xMin = findXEdge(pointer: pointer, y: y, startingX: Int(ref.x), negative: true, width: width, bytesPerRow: bytesPerRow),
+               xMin < finalMinX {
+                finalMinX = xMin
+            }
+            if let xMax = findXEdge(pointer: pointer, y: y, startingX: Int(ref.x), negative: false, width: width, bytesPerRow: bytesPerRow),
+               xMax > finalMaxX {
+                finalMaxX = xMax
+            }
+        }
+        
+        // Calculate width and height
+        let boxWidth = finalMaxX - finalMinX
+        let boxHeight = finalMaxY - finalMinY
+        
+        // Ensure positive dimensions
+        guard boxWidth > 0, boxHeight > 0 else {
+            return nil
+        }
+        
+        // Flip the Y axis to compensate for macOS being Lower Left Origin
+        let flippedMinY = height - finalMaxY
+        
+        return CGRect(x: finalMinX, y: flippedMinY, width: boxWidth, height: boxHeight)
     }
-
-    /// Find the X edge in a positive direction.
+    
+    /// Find the X edge in a direction.
     ///
     /// - Parameters:
     ///   - pointer: Data Pointer
     ///   - y: The Y position
-    ///   - xPos: Starting X position
-    ///   - negative: Should we flip the direction?
+    ///   - startingX: Starting X position
+    ///   - negative: Should we search to the left (true) or right (false)?
+    ///   - width: Image width
+    ///   - bytesPerRow: Bytes per row
     /// - Returns: The X position of the edge.
-    fileprivate func findXEdge(pointer: UnsafePointer<UInt8>, y: Int, startingX xPos: Int, negative: Bool) -> Int? {
-        // Create the range for the loop.
-        var loopRange = Array(negative ? 0..<xPos : xPos..<width)
-
-        // Flip?
-        if negative {
-            loopRange = loopRange.reversed()
-        }
-
-        for x in loopRange {
-            // Get pixel data.
-            let pixelAddress = x * 4 + y * width * 4
-
-            // Get the address for the pixel then get the 4th byte for the alpha.
-            if pointer.advanced(by: pixelAddress + 3).pointee == UInt8.max {
-                // Not a transparent pixel.
-
-                // Found an edge
+    fileprivate func findXEdge(pointer: UnsafePointer<UInt8>, y: Int, startingX xPos: Int, negative: Bool, width: Int, bytesPerRow: Int) -> Int? {
+        let start = negative ? xPos - 1 : xPos
+        let end = negative ? -1 : width
+        let step = negative ? -1 : 1
+        
+        for x in stride(from: start, through: end, by: step) {
+            if x < 0 || x >= width {
+                break
+            }
+            let addr = y * bytesPerRow + x * 4 // Assuming RGBA
+            if pointer[addr + 3] == 255 { // Alpha channel
                 return x + 1
             }
         }
-
         return nil
     }
-
-    /// Find the Y edge in a positive direction.
+    
+    /// Find the Y edge in a direction.
     ///
     /// - Parameters:
     ///   - pointer: Data Pointer
-    ///   - X: The X position
-    ///   - yPos: Starting Y position
-    ///   - negative: Should we flip the direction?
+    ///   - x: The X position
+    ///   - startingY: Starting Y position
+    ///   - negative: Should we search upwards (true) or downwards (false)?
+    ///   - width: Image width
+    ///   - bytesPerRow: Bytes per row
     /// - Returns: The Y position of the edge.
-    fileprivate func findYEdge(pointer: UnsafePointer<UInt8>, x: Int, startingY yPos: Int, negative: Bool) -> Int? {
-        // Create the range for the loop.
-        var loopRange = Array(negative ? 0..<yPos : yPos..<height)
-
-        // Flip?
-        if negative {
-            loopRange = loopRange.reversed()
-        }
-
-        for y in loopRange {
-            // Get pixel data.
-            let pixelAddress = x * 4 + y * width * 4
-
-            // Get the address for the pixel then get the 4th byte for the alpha.
-            if pointer.advanced(by: pixelAddress + 3).pointee == UInt8.max {
-                // Not a transparent pixel.
-
-                // Found an edge
+    fileprivate func findYEdge(pointer: UnsafePointer<UInt8>, x: Int, startingY yPos: Int, negative: Bool, width: Int, bytesPerRow: Int) -> Int? {
+        let start = negative ? yPos - 1 : yPos
+        let end = negative ? -1 : height
+        let step = negative ? -1 : 1
+        
+        for y in stride(from: start, through: end, by: step) {
+            if y < 0 || y >= height {
+                break
+            }
+            let addr = y * bytesPerRow + x * 4 // Assuming RGBA
+            if pointer[addr + 3] == 255 { // Alpha channel
                 return y + 1
             }
         }
-
         return nil
     }
-
 }
 
 struct XYPosHolder {
-
     var minY: Int?
-
     var maxY: Int?
-
     var minX: Int?
-
     var maxX: Int?
-
 }
