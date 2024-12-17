@@ -1,14 +1,14 @@
 import Foundation
 
 class BezelResolver {
-    private let bezelsURL = "https://raw.githubusercontent.com/sathoeni/frameit-bezels/main"
+    private let bezelsURL = "https://raw.githubusercontent.com/sathoeni/frameit-bezels/develop"
     private let cacheDirectory: URL
     private var bezelsData: DeviceBezelsData?
     
     init() throws {
         let fileManager = FileManager.default
         let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        cacheDirectory = cachesDirectory.appendingPathComponent("frameme-bezels")
+        cacheDirectory = cachesDirectory.appendingPathComponent("frameit-bezels")
         
         try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }

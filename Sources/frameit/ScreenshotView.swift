@@ -18,8 +18,7 @@ final class ScreenshotView: NSView {
 
     private var image: NSImage
     private var title: String
-    private var horizontalPadding: CGFloat
-    private var topImageOffset: CGFloat
+    private var insets: Insets
     private let font: NSFont
 
     private let fontName = "Roboto-Regular"
@@ -27,11 +26,10 @@ final class ScreenshotView: NSView {
 
     // MARK: Lifecycle
 
-    init?(image: NSImage, title: String, fontSize: CGFloat, size: CGSize, horizontalImagePadding: Double, topImageOffset: Double) {
+    init?(image: NSImage, title: String, fontSize: CGFloat, size: CGSize, insets: Insets) {
         self.image = image
         self.title = title
-        self.topImageOffset = CGFloat(topImageOffset)
-        self.horizontalPadding = CGFloat(horizontalImagePadding)
+        self.insets = insets
 
         guard let customFont = NSFont(name: fontName, size: fontSize) else {
             print("*** ERROR: Font \"\(fontName)\" not found. Check if the font is installed with the Font Book app. You can find the font in the resource folder and install it by double-clicking.")
@@ -53,13 +51,22 @@ final class ScreenshotView: NSView {
         NSBezierPath.fill(dirtyRect)
 
         // Draw Image
-        let imagePreferredWidth = frame.width - horizontalPadding * 2
-        let imageScaleFactor = imagePreferredWidth / image.size.width
-        let scaledImageSize = CGSize(width: image.size.width * imageScaleFactor, height: image.size.height * imageScaleFactor)
+        // The insets are treated as minimum insets.
+        // Priority: bottom > top > left/right
+        
+        var imageScaleFactor = (frame.height - insets.top - insets.bottom) / image.size.height
+        var scaledImageSize = CGSize(width: image.size.width * imageScaleFactor, height: image.size.height * imageScaleFactor)
+        
+        // If minimum horiztonal insets could not be fullfilled, use the horiztonal insets as reference
+        if scaledImageSize.width + insets.left + insets.right > frame.width {
+            imageScaleFactor = (frame.width - insets.left - insets.right) / image.size.width
+            scaledImageSize = CGSize(width: image.size.width * imageScaleFactor, height: image.size.height * imageScaleFactor)
+        }
+        
 
         // Calculate position of the image
-        let xImagePosition = (frame.width - scaledImageSize.width) / 2
-        let yImagePosition = -topImageOffset
+        let yImagePosition = insets.bottom
+        let xImagePosition = max(insets.left, (frame.width - scaledImageSize.width) / 2)
 
         let imageRect = CGRect(origin: CGPoint(x: xImagePosition, y: yImagePosition), size: scaledImageSize)
         image.draw(in: imageRect, from: CGRect.zero, operation: .sourceOver, fraction: 1)
@@ -75,11 +82,11 @@ final class ScreenshotView: NSView {
         ]
 
         let attributedString = NSAttributedString(string: title, attributes: textAttributes)
-        let maxTextWidth = frame.width - 2 * horizontalPadding
+        let maxTextWidth = frame.width - insets.left - insets.right
         var textRect = attributedString.boundingRect(with: CGSize(width: maxTextWidth, height: CGFloat.greatestFiniteMagnitude), options: .usesLineFragmentOrigin)
 
         // Position the text centered between the top edge and the image's top edge
-        let xTextPosition = (frame.width - textRect.width) / 2
+        let xTextPosition = max(insets.left, (frame.width - textRect.width) / 2)
         let imageTopPosition = yImagePosition + scaledImageSize.height
         let yTextPosition = imageTopPosition + (frame.height - imageTopPosition - textRect.height) / 2
 

@@ -14,7 +14,6 @@ struct RenderableScreenshotData {
     var localeCode: String
     var url: URL
     var screenshotSize: CGSize
-    var horizontalPadding: Double
-    var topImageOffset: Double
+    var insets: Insets
     var fontSize: CGFloat
 }

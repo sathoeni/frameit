@@ -42,6 +42,6 @@ struct DeviceBezelsData: Codable {
         let version: String
         let lastUpdated: String
         let description: String
-        let source: String
+        let sources: [String]
     }
 }

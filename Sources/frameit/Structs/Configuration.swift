@@ -13,10 +13,8 @@ struct DeviceConfiguration: Codable {
     let width: Double
     // The height of the device screenshot
     let height: Double
-    // The horiztonal insets of the screenshot
-    let horizontalPadding: Double
-    // The top offset of the screenshot
-    let topScreenshotOffset: Double
+    // The insets of the screenshot
+    let insets: Insets
     // The font size of the text
     let fontSize: Int
     

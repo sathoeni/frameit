@@ -249,14 +249,11 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 continue
             }
             
-            // Get the original pixel size
-            let originalSize = framingData.originalPixelSize
-            
             // Find matching device configuration based on original image size
             guard let (deviceName, deviceConfig) = config.devices.first(where: {
-                $0.value.size == originalSize
+                $0.value.size == framingData.originalPixelSize
             }) else {
-                print("Warning: No matching device configuration found for image size: \(originalSize)")
+                print("Warning: No matching device configuration found for image size: \(framingData.originalPixelSize)")
                 continue
             }
             
@@ -273,9 +270,8 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 text: textData.title,
                 localeCode: textData.localeCode,
                 url: framedURL,
-                screenshotSize: originalSize,  // Use original pixel size
-                horizontalPadding: deviceConfig.horizontalPadding,
-                topImageOffset: deviceConfig.topScreenshotOffset,
+                screenshotSize: framingData.originalPixelSize,  // Use original pixel size
+                insets: deviceConfig.insets,
                 fontSize: CGFloat(deviceConfig.fontSize)
             )
             
@@ -311,8 +307,7 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 title: screenshotData.text,
                 fontSize: screenshotData.fontSize,
                 size: screenshotData.screenshotSize,
-                horizontalImagePadding: screenshotData.horizontalPadding,
-                topImageOffset: screenshotData.topImageOffset
+                insets: screenshotData.insets
             ) else {
                 print("Warning: Failed to create ScreenshotView for image at path: \(framedImagePath)")
                 continue
