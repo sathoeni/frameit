@@ -1,183 +1,197 @@
 {
-    "devices": {
-        "iPhone 16 Pro Max": {
-            "width": 1320,
-            "height": 2868,
-            "insets": {
-                "top": 147,
-                "left": 20,
-                "bottom": 0,
-                "right": 20
-            },
-            "fontSize": 78
+  "devices": {
+    "iPhone 16 Pro Max": {
+      "width": 1320,
+      "height": 2868,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 147,
+          "left": 20,
+          "bottom": 0,
+          "right": 20
         },
-        "iPhone 14 Pro Max": {
-            "width": 1290,
-            "height": 2796,
-            "insets": {
-                "top": 147,
-                "left": 20,
-                "bottom": 0,
-                "right": 20
-            },
-            "fontSize": 78
-        },
-        "iPhone 14 Pro": {
-            "width": 1179,
-            "height": 2556,
-            "insets": {
-                "top": 147,
-                "left": 20,
-                "bottom": 0,
-                "right": 20
-            },
-            "fontSize": 72
-        },
-        "iPhone 13 Pro Max": {
-            "width": 1284,
-            "height": 2778,
-            "insets": {
-                "top": 147,
-                "left": 20,
-                "bottom": 0,
-                "right": 20
-            },
-            "fontSize": 78
-        },
-        "iPhone 13/13 Pro": {
-            "width": 1170,
-            "height": 2532,
-            "insets": {
-                "top": 147,
-                "left": 20,
-                "bottom": 0,
-                "right": 20
-            },
-            "fontSize": 72
-        },
-        "iPad Pro 12.9": {
-            "width": 2048,
-            "height": 2732,
-            "insets": {
-                "top": 180,
-                "left": 80,
-                "bottom": 0,
-                "right": 80
-            },
-            "fontSize": 78
-        },
-        "iPad Pro 11": {
-            "width": 1668,
-            "height": 2388,
-            "insets": {
-                "top": 110,
-                "left": 54,
-                "bottom": 0,
-                "right": 54
-            },
-            "fontSize": 78
-        }
+        "fontSize": 78
+      }
     },
-    "texts": [
-        {
-            "localeCode": "de-DE",
-            "viewID": "home",
-            "title": "Der perfekte Begleiter für die ganze Familie."
+    "iPhone 14 Pro Max": {
+      "width": 1290,
+      "height": 2796,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 147,
+          "left": 20,
+          "bottom": 0,
+          "right": 20
         },
-        {
-            "localeCode": "de-DE",
-            "viewID": "insurancecard",
-            "title": "Jederzeit direkter Zugriff auf Ihre Versichertenkarte."
+        "fontSize": 78
+      }
+    },
+    "iPhone 14 Pro": {
+      "width": 1179,
+      "height": 2556,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 147,
+          "left": 20,
+          "bottom": 0,
+          "right": 20
         },
-        {
-            "localeCode": "de-DE",
-            "viewID": "invoices",
-            "title": "Immer auf dem aktuellen Stand Ihrer offenen Rechnungen."
+        "fontSize": 72
+      }
+    },
+    "iPhone 13 Pro Max": {
+      "width": 1284,
+      "height": 2778,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 147,
+          "left": 20,
+          "bottom": 0,
+          "right": 20
         },
-        {
-            "localeCode": "de-DE",
-            "viewID": "policies",
-            "title": "Ihre Produkte stets im Überblick."
+        "fontSize": 78
+      }
+    },
+    "iPhone 13/13 Pro": {
+      "width": 1170,
+      "height": 2532,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 147,
+          "left": 20,
+          "bottom": 0,
+          "right": 20
         },
-        {
-            "localeCode": "de-DE",
-            "viewID": "scan",
-            "title": "Rechnungen scannen, senden und einsehen."
+        "fontSize": 72
+      }
+    },
+    "iPad Pro 12.9": {
+      "width": 2048,
+      "height": 2732,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 180,
+          "left": 80,
+          "bottom": 0,
+          "right": 80
         },
-        {
-            "localeCode": "it-IT",
-            "viewID": "home",
-            "title": "Il compagno perfetto per tutta la famiglia."
+        "fontSize": 78
+      }
+    },
+    "iPad Pro 11": {
+      "width": 1668,
+      "height": 2388,
+      "layoutConfiguration": {
+        "deviceFrameInsets": {
+          "top": 110,
+          "left": 54,
+          "bottom": 0,
+          "right": 54
         },
-        {
-            "localeCode": "it-IT",
-            "viewID": "insurancecard",
-            "title": "Accesso diretto alla vostra tessera d'assicurato in qualsiasi momento."
-        },
-        {
-            "localeCode": "it-IT",
-            "viewID": "invoices",
-            "title": "Panoramica sempre aggiornata delle vostre fatture in sospeso."
-        },
-        {
-            "localeCode": "it-IT",
-            "viewID": "policies",
-            "title": "I vostri prodotti sempre sotto controllo"
-        },
-        {
-            "localeCode": "it-IT",
-            "viewID": "scan",
-            "title": "Scansionare, inviare e visualizzare le fatture."
-        },
-        {
-            "localeCode": "fr-FR",
-            "viewID": "home",
-            "title": "Le compagnon idéal pour toute la famille."
-        },
-        {
-            "localeCode": "fr-FR",
-            "viewID": "insurancecard",
-            "title": "Accès direct à votre carte d'assuré à tout moment."
-        },
-        {
-            "localeCode": "fr-FR",
-            "viewID": "invoices",
-            "title": "Toujours au fait de la situation de vos factures en suspens."
-        },
-        {
-            "localeCode": "fr-FR",
-            "viewID": "policies",
-            "title": "Tous vos produits en un coup d'œil."
-        },
-        {
-            "localeCode": "fr-FR",
-            "viewID": "scan",
-            "title": "Envoyer et visionner les factures via l'app."
-        },
-        {
-            "localeCode": "en-US",
-            "viewID": "home",
-            "title": "The perfect companion for the whole family."
-        },
-        {
-            "localeCode": "en-US",
-            "viewID": "insurancecard",
-            "title": "Direct access to your insurance card at any time."
-        },
-        {
-            "localeCode": "en-US",
-            "viewID": "invoices",
-            "title": "Always keep track of your outstanding invoices."
-        },
-        {
-            "localeCode": "en-US",
-            "viewID": "policies",
-            "title": "Constant overview of your products."
-        },
-        {
-            "localeCode": "en-US",
-            "viewID": "scan",
-            "title": "Scan, send and view invoices."
-        }
-    ]
+        "fontSize": 78
+      }
+    }
+  },
+  "titles": [
+    {
+      "localeCode": "de-DE",
+      "viewID": "home",
+      "text": "Der perfekte Begleiter für die ganze Familie."
+    },
+    {
+      "localeCode": "de-DE",
+      "viewID": "insurancecard",
+      "text": "Jederzeit direkter Zugriff auf Ihre Versichertenkarte."
+    },
+    {
+      "localeCode": "de-DE",
+      "viewID": "invoices",
+      "text": "Immer auf dem aktuellen Stand Ihrer offenen Rechnungen."
+    },
+    {
+      "localeCode": "de-DE",
+      "viewID": "policies",
+      "text": "Ihre Produkte stets im Überblick."
+    },
+    {
+      "localeCode": "de-DE",
+      "viewID": "scan",
+      "text": "Rechnungen scannen, senden und einsehen."
+    },
+    {
+      "localeCode": "it-IT",
+      "viewID": "home",
+      "text": "Il compagno perfetto per tutta la famiglia."
+    },
+    {
+      "localeCode": "it-IT",
+      "viewID": "insurancecard",
+      "text": "Accesso diretto alla vostra tessera d'assicurato in qualsiasi momento."
+    },
+    {
+      "localeCode": "it-IT",
+      "viewID": "invoices",
+      "text": "Panoramica sempre aggiornata delle vostre fatture in sospeso."
+    },
+    {
+      "localeCode": "it-IT",
+      "viewID": "policies",
+      "text": "I vostri prodotti sempre sotto controllo"
+    },
+    {
+      "localeCode": "it-IT",
+      "viewID": "scan",
+      "text": "Scansionare, inviare e visualizzare le fatture."
+    },
+    {
+      "localeCode": "fr-FR",
+      "viewID": "home",
+      "text": "Le compagnon idéal pour toute la famille."
+    },
+    {
+      "localeCode": "fr-FR",
+      "viewID": "insurancecard",
+      "text": "Accès direct à votre carte d'assuré à tout moment."
+    },
+    {
+      "localeCode": "fr-FR",
+      "viewID": "invoices",
+      "text": "Toujours au fait de la situation de vos factures en suspens."
+    },
+    {
+      "localeCode": "fr-FR",
+      "viewID": "policies",
+      "text": "Tous vos produits en un coup d'œil."
+    },
+    {
+      "localeCode": "fr-FR",
+      "viewID": "scan",
+      "text": "Envoyer et visionner les factures via l'app."
+    },
+    {
+      "localeCode": "en-US",
+      "viewID": "home",
+      "text": "The perfect companion for the whole family."
+    },
+    {
+      "localeCode": "en-US",
+      "viewID": "insurancecard",
+      "text": "Direct access to your insurance card at any time."
+    },
+    {
+      "localeCode": "en-US",
+      "viewID": "invoices",
+      "text": "Always keep track of your outstanding invoices."
+    },
+    {
+      "localeCode": "en-US",
+      "viewID": "policies",
+      "text": "Constant overview of your products."
+    },
+    {
+      "localeCode": "en-US",
+      "viewID": "scan",
+      "text": "Scan, send and view invoices."
+    }
+  ]
 }

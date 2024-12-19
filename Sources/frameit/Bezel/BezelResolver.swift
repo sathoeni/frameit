@@ -13,7 +13,7 @@ class BezelResolver {
         try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
     
-    func findBezel(forScreenshotSize size: CGSize) throws -> URL? {
+    func findBezel(bezelColor: String?, forScreenshotSize size: CGSize) throws -> URL? {
         if bezelsData == nil {
             try loadBezels()
         }
@@ -23,7 +23,7 @@ class BezelResolver {
         }
         
         // Determine the orientation of the screenshot
-        let orientation: DeviceBezelsData.DeviceModel.Orientation = 
+        let orientation: DeviceBezelsData.DeviceModel.Orientation =
             size.width > size.height ? .landscape : .portrait
         
         // Find matching device model based on resolution
@@ -32,19 +32,18 @@ class BezelResolver {
             
             if orientation == .portrait {
                 matches = device.resolution.width == Int(size.width) &&
-                         device.resolution.height == Int(size.height)
+                          device.resolution.height == Int(size.height)
             } else {
                 // For landscape, we need to check the rotated dimensions
                 matches = device.resolution.width == Int(size.height) &&
-                         device.resolution.height == Int(size.width)
+                          device.resolution.height == Int(size.width)
             }
             
             if matches {
                 // Found matching resolution, get corresponding frame
-                // Default to first color (usually black/black-titanium)
                 if let frame = device.frames.first(where: { frame in
-                    frame.orientation == orientation && 
-                    frame.color == device.frames[0].color  // Use first available color
+                    frame.orientation == orientation &&
+                    (bezelColor == nil || frame.color == bezelColor)
                 }) {
                     print("> Found matching device: \(device.name) (\(frame.color))")
                     return try ensureBezelDownloaded(path: frame.path)
@@ -55,15 +54,15 @@ class BezelResolver {
         // If exact match not found, try finding a device with matching aspect ratio
         for device in bezelsData.devices {
             let resolutionAspectRatio = Double(device.resolution.width) / Double(device.resolution.height)
-            let screenshotAspectRatio = orientation == .portrait ? 
-                size.width / size.height : 
+            let screenshotAspectRatio = orientation == .portrait ?
+                size.width / size.height :
                 size.height / size.width
             
             // Allow for small differences in aspect ratio (0.1% tolerance)
             if abs(resolutionAspectRatio - screenshotAspectRatio) < 0.001 {
                 if let frame = device.frames.first(where: { frame in
-                    frame.orientation == orientation && 
-                    frame.color == device.frames[0].color
+                    frame.orientation == orientation &&
+                    (bezelColor == nil || frame.color == bezelColor)
                 }) {
                     print("> No exact resolution match found. Using \(device.name) (\(frame.color)) based on aspect ratio")
                     return try ensureBezelDownloaded(path: frame.path)
@@ -73,6 +72,7 @@ class BezelResolver {
         
         return nil
     }
+
     
     private func loadBezels() throws {
         let jsonURL = URL(string: "\(bezelsURL)/device-bezels.json")!

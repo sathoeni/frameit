@@ -15,7 +15,7 @@ struct BezelFramer {
     
     static let compTool: CompositeImage = CompositeImage()
     
-    static func addBezel(screenshotImage: NSImage, skipContentBox: Bool = false, noClip: Bool = false, frame: String? = nil) throws -> NSImage {
+    static func addBezel(bezelColor: String?, screenshotImage: NSImage, skipContentBox: Bool = false, noClip: Bool = false, frame: String? = nil) throws -> NSImage {
         // Load the frame
         var bezelImage: CGImage!
         
@@ -29,8 +29,7 @@ struct BezelFramer {
                 // Try to find matching bezel
                 let bezelResolver = try BezelResolver()
                 
-                let size = CGSize(width: screenshotImage.size.width, height: screenshotImage.size.height)
-                guard let bezelPath = try bezelResolver.findBezel(forScreenshotSize: screenshotImage.resolution) else {
+                guard let bezelPath = try bezelResolver.findBezel(bezelColor: bezelColor, forScreenshotSize: screenshotImage.resolution) else {
                     throw BezelFramerError.noMatchingBezelFound
                 }
                 
@@ -40,6 +39,7 @@ struct BezelFramer {
                 bezelImage = loadedBezel
             }
         }
+        
         
         
         var cgImage: CGImage!

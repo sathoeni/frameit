@@ -36,7 +36,7 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
     @Option(name: .customShort("c"), help: "Path to the configuration file (optional, only needed for adding text)")
     var configPath: String?
 
-    private var frameitConfig: FrameitConfiguration?
+    private var frameitConfig: Configuration?
     
     mutating func validate() throws { 
 
@@ -68,7 +68,7 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
             }
             
             let decoder = JSONDecoder()
-            guard let config = try? decoder.decode(FrameitConfiguration.self, from: configData) else {
+            guard let config = try? decoder.decode(Configuration.self, from: configData) else {
                 throw FrameitError.invalidConfigurationFormat
             }
             
@@ -126,7 +126,7 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
                 
                 // Add bezel to the original image
                 do {
-                    var framedImage = try BezelFramer.addBezel(screenshotImage: originalImage)
+                    var framedImage = try BezelFramer.addBezel(bezelColor: bezelColor(for: originalPixelSize), screenshotImage: originalImage)
                     
                     // Resize the framed image if keepOriginalSize is true
                     if keepOriginalSize, let resizedImage = resizeImageToOriginalPixelSize(framedImage, originalPixelSize: originalPixelSize) {
@@ -228,7 +228,7 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
     
     private func prepareRenderingData(
         framingDataList: [FramingData],
-        with config: FrameitConfiguration
+        with config: Configuration
     ) throws -> [RenderableScreenshot] {
         var renderableDataList: [RenderableScreenshot] = []
         
@@ -258,21 +258,24 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
             }
             
             // Find the corresponding text data
-            guard let textData = config.texts.first(where: {
+            guard let textData = config.titles.first(where: {
                 $0.localeCode.lowercased() == localeCode.lowercased() && $0.viewID.lowercased() == viewID.lowercased()
             }) else {
                 print("Warning: No valid text configuration found for locale: \(localeCode), viewID: \(viewID)")
                 continue
             }
             
+            let insets = deviceConfig.layoutConfiguration?.deviceFrameInsets ?? .init(top: 0, left: 0, bottom: 0, right: 0)
+            let fontSize = deviceConfig.layoutConfiguration?.fontSize ?? 48
+            
             // Create the renderable screenshot data
             let renderableScreenshotData = RenderableScreenshotData(
-                text: textData.title,
+                text: textData.text,
                 localeCode: textData.localeCode,
                 url: framedURL,
                 screenshotSize: framingData.originalPixelSize,  // Use original pixel size
-                insets: deviceConfig.insets,
-                fontSize: CGFloat(deviceConfig.fontSize)
+                insets: insets,
+                fontSize: CGFloat(fontSize)
             )
             
             // Create the RenderableScreenshot instance
@@ -287,6 +290,20 @@ struct AppStoreScreenshotGenerator: AsyncParsableCommand {
         }
         
         return renderableDataList
+    }
+    
+    private func bezelColor(for size: CGSize) -> String? {
+        guard let configuration = frameitConfig else { return nil }
+        // Iterate through all devices in the configuration
+        for (_, deviceSpecification) in configuration.devices {
+            // Compare the input size with the device size
+            if deviceSpecification.size == size {
+                // Return the optional bezel color
+                return deviceSpecification.bezelColor
+            }
+        }
+        // Return nil if no matching device is found
+        return nil
     }
     
     @MainActor
