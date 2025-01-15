@@ -1,0 +1,230 @@
+{
+    "devices": {
+      "iPhone 16 Pro Max - 6.9": {
+        "width": 1320,
+        "height": 2868,
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 340,
+            "left": 20,
+            "bottom": -144,
+            "right": 20
+          },
+          "fontSize": 78
+        }
+      },
+      "iPhone 16 Pro - 6.3inch": {
+        "width": 1206,
+        "height": 2622,
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 300,
+            "left": 20,
+            "bottom": -142,
+            "right": 20
+          },
+          "fontSize": 78
+        }
+      },
+      "iPhone 14 Plus - 6.5inch": {
+        "width": 1284,
+        "height": 2778,
+        "bezelColor": "midnight",
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 300,
+            "left": 32,
+            "bottom": -140,
+            "right": 32
+          },
+          "fontSize": 78
+        }
+      },
+      "iPhone 14 - 5.8inch": {
+        "width": 1170,
+        "height": 2532,
+        "bezelColor": "midnight",
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 300,
+            "left": 32,
+            "bottom": -130,
+            "right": 32
+          },
+          "fontSize": 72
+        }
+      },
+      "iPhone 8 Plus - 5.5inch": {
+        "width": 1242,
+        "height": 2208,
+        "bezelColor": "space-gray",
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 300,
+            "left": 20,
+            "bottom": -248,
+            "right": 20
+          },
+          "fontSize": 78
+        }
+      },
+      "iPhone 8 - 4.7inch": {
+        "width": 750,
+        "height": 1334,
+        "bezelColor": "space-gray",
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 300,
+            "left": 20,
+            "bottom": -148,
+            "right": 20
+          },
+          "fontSize": 48
+        }
+      },
+      "iPad Pro 12.9 - 2nd Gen": {
+        "width": 2048,
+        "height": 2732,
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 240,
+            "left": 20,
+            "bottom": 20,
+            "right": 20
+          },
+          "fontSize": 68
+        }
+      },
+      "iPad Pro 11 - M4": {
+        "width": 1668,
+        "height": 2420,
+        "bezelColor": "space-gray",
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 240,
+            "left": 20,
+            "bottom": 20,
+            "right": 20
+          },
+          "fontSize": 60
+        }
+      },
+      "iPad Pro 13 - M4": {
+        "width": 2064,
+        "height": 2752,
+        "bezelColor": "space-gray",
+        "layoutConfiguration": {
+          "deviceFrameInsets": {
+            "top": 240,
+            "left": 54,
+            "bottom": 20,
+            "right": 54
+          },
+          "fontSize": 68
+        }
+      }
+    },
+    "titles": [
+      {
+        "localeCode": "de-DE",
+        "viewID": "dashboard",
+        "text": "Ihr Smart Home in einer App vereint."
+      },
+      {
+        "localeCode": "de-DE",
+        "viewID": "remote",
+        "text": "Steuern Sie Ihr Zuhause von überall."
+      },
+      {
+        "localeCode": "de-DE",
+        "viewID": "energy",
+        "text": "Energieverbrauch in Echtzeit überwachen."
+      },
+      {
+        "localeCode": "de-DE",
+        "viewID": "devices",
+        "text": "Alle Geräte auf einen Blick."
+      },
+      {
+        "localeCode": "de-DE",
+        "viewID": "setup",
+        "text": "Neue Geräte einfach hinzufügen."
+      },
+      {
+        "localeCode": "it-IT",
+        "viewID": "dashboard",
+        "text": "La tua casa intelligente in una sola app."
+      },
+      {
+        "localeCode": "it-IT",
+        "viewID": "remote",
+        "text": "Controlla la tua casa da qualsiasi luogo."
+      },
+      {
+        "localeCode": "it-IT",
+        "viewID": "energy",
+        "text": "Monitora il consumo energetico in tempo reale."
+      },
+      {
+        "localeCode": "it-IT",
+        "viewID": "devices",
+        "text": "Tutti i dispositivi a colpo d'occhio."
+      },
+      {
+        "localeCode": "it-IT",
+        "viewID": "setup",
+        "text": "Aggiungi nuovi dispositivi facilmente."
+      },
+      {
+        "localeCode": "fr-FR",
+        "viewID": "dashboard",
+        "text": "Votre maison intelligente dans une seule app."
+      },
+      {
+        "localeCode": "fr-FR",
+        "viewID": "remote",
+        "text": "Contrôlez votre maison de n'importe où."
+      },
+      {
+        "localeCode": "fr-FR",
+        "viewID": "energy",
+        "text": "Surveillez votre consommation en temps réel."
+      },
+      {
+        "localeCode": "fr-FR",
+        "viewID": "devices",
+        "text": "Tous vos appareils en un coup d'œil."
+      },
+      {
+        "localeCode": "fr-FR",
+        "viewID": "setup",
+        "text": "Ajoutez facilement de nouveaux appareils."
+      },
+      {
+        "localeCode": "en-US",
+        "viewID": "dashboard",
+        "text": "Your smart home unified in one app."
+      },
+      {
+        "localeCode": "en-US",
+        "viewID": "remote",
+        "text": "Control your home from anywhere."
+      },
+      {
+        "localeCode": "en-US",
+        "viewID": "energy",
+        "text": "Monitor energy usage in real-time."
+      },
+      {
+        "localeCode": "en-US",
+        "viewID": "devices",
+        "text": "All your devices at a glance."
+      },
+      {
+        "localeCode": "en-US",
+        "viewID": "setup",
+        "text": "Add new devices with ease."
+      }
+    ]
+  }
+   
